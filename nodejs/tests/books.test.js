@@ -135,6 +135,58 @@ describe("book catalog", () => {
     expect(response.body.quantity).toBe(book.quantity + 1);
   });
 
+  test("decreases stock by one", async () => {
+    const list = await request(app).get("/api/books");
+    const book = list.body.find((item) => item.quantity > 0);
+    const response = await request(app).patch(`/api/books/${book.id}/stock`).send({ adjustment: -1 });
+    expect(response.status).toBe(200);
+    expect(response.body.quantity).toBe(book.quantity - 1);
+  });
+
+  test("rejects a stock decrease below zero", async () => {
+    const list = await request(app).get("/api/books");
+    const book = list.body.find((item) => item.quantity === 0);
+    const response = await request(app).patch(`/api/books/${book.id}/stock`).send({ adjustment: -1 });
+    expect(response.status).toBe(400);
+  });
+
+  test("filters books by category", async () => {
+    const response = await request(app).get("/api/books").query({ category: "Science" });
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body.every((book) => book.category === "Science")).toBe(true);
+  });
+
+  test("searches books through the search endpoint", async () => {
+    const response = await request(app).get("/api/books/search").query({ q: "Dune" });
+    expect(response.status).toBe(200);
+    expect(response.body.some((book) => book.title === "Dune")).toBe(true);
+  });
+
+  test("updates a book keeping year and price in their fields", async () => {
+    const list = await request(app).get("/api/books");
+    const book = list.body[0];
+    const response = await request(app).put(`/api/books/${book.id}`).send({
+      title: book.title,
+      author: book.author,
+      isbn: book.isbn,
+      category: book.category,
+      published_year: 2001,
+      price: 12.5,
+      quantity: book.quantity,
+    });
+    expect(response.status).toBe(200);
+    expect(response.body.published_year).toBe(2001);
+    expect(response.body.price).toBe(12.5);
+  });
+
+  test("counts every copy in stock", async () => {
+    const list = await request(app).get("/api/books");
+    const expected = list.body.reduce((sum, book) => sum + book.quantity, 0);
+    const response = await request(app).get("/api/dashboard/stats");
+    expect(response.body.available_copies).toBe(expected);
+  });
+
   test("serves the catalog page", async () => {
     const response = await request(app).get("/");
     expect(response.status).toBe(200);

@@ -36,9 +36,17 @@ processButton.addEventListener("click", async () => {
   message.textContent = "";
   const body = new FormData();
   body.append("file", selectedFile);
-  const response = await fetch("/api/recognize", { method: "POST", body });
-  const data = await response.json();
-  processButton.disabled = false;
+  let response;
+  let data;
+  try {
+    response = await fetch("/api/recognize", { method: "POST", body });
+    data = await response.json();
+  } catch (error) {
+    message.textContent = "Request failed";
+    return;
+  } finally {
+    processButton.disabled = false;
+  }
   if (!response.ok) {
     message.textContent = data.error || "Request failed";
     return;

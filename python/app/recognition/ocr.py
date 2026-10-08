@@ -14,7 +14,7 @@ def configure_tesseract():
 
 
 def tesseract_config():
-    return "--oem 3 --psm 7"
+    return "--oem 3 --psm 6"
 
 
 def prepare_for_ocr(original, preprocessed):
@@ -23,4 +23,7 @@ def prepare_for_ocr(original, preprocessed):
 
 def extract_text(image, config):
     configure_tesseract()
-    return pytesseract.image_to_string(image, lang="eng", config=config)
+    try:
+        return pytesseract.image_to_string(image, lang="eng", config=config)
+    except pytesseract.TesseractNotFoundError as error:
+        raise RuntimeError("Tesseract is not installed") from error

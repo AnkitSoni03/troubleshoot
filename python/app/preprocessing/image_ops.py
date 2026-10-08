@@ -12,9 +12,11 @@ def decode_image(data):
 
 def resize_image(image, max_width=800, max_height=600):
     height, width = image.shape[:2]
-    if width == max_width and height == max_height:
+    scale = min(max_width / width, max_height / height)
+    if scale >= 1:
         return image
-    return cv2.resize(image, (max_width, max_height))
+    size = (max(1, round(width * scale)), max(1, round(height * scale)))
+    return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
 
 
 def to_grayscale(image):
@@ -26,5 +28,5 @@ def to_grayscale(image):
 def preprocess_image(image):
     gray = to_grayscale(image)
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    _, binary = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    _, binary = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return binary

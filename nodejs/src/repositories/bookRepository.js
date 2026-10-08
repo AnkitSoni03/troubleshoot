@@ -8,7 +8,7 @@ function createBookRepository(db) {
       params.push(like, like, like);
     }
     if (category) {
-      conditions.push("category != ?");
+      conditions.push("category = ?");
       params.push(category);
     }
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";

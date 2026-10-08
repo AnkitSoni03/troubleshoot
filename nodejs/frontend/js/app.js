@@ -9,16 +9,15 @@ const dialog = document.querySelector("#book-dialog");
 const form = document.querySelector("#book-form");
 const formTitle = document.querySelector("#form-title");
 const cancelButton = document.querySelector("#cancel-form");
+const formMessage = document.querySelector("#form-message");
 
 const booksById = new Map();
 let editingId = null;
-let pendingQuery = "";
+let booksRequestId = 0;
 
 function init() {
   searchInput.addEventListener("input", () => {
-    const query = pendingQuery;
-    pendingQuery = searchInput.value.trim();
-    loadBooks(query);
+    loadBooks();
   });
   categorySelect.addEventListener("change", () => {
     loadBooks();
@@ -74,6 +73,7 @@ async function loadCategories() {
 }
 
 async function loadBooks(query = searchInput.value.trim()) {
+  const requestId = ++booksRequestId;
   const params = new URLSearchParams();
   if (query) {
     params.set("q", query);
@@ -83,6 +83,9 @@ async function loadBooks(query = searchInput.value.trim()) {
   }
   const response = await fetch(`/api/books?${params.toString()}`);
   const data = await readJson(response);
+  if (requestId !== booksRequestId) {
+    return;
+  }
   if (!response.ok) {
     showError(data.error);
     return;
@@ -146,6 +149,7 @@ function openCreate() {
   form.reset();
   formTitle.textContent = "Add book";
   message.textContent = "";
+  formMessage.textContent = "";
   dialog.showModal();
 }
 
@@ -164,6 +168,7 @@ function openEdit(id) {
   form.elements.price.value = book.price;
   form.elements.quantity.value = book.quantity;
   message.textContent = "";
+  formMessage.textContent = "";
   dialog.showModal();
 }
 
@@ -184,7 +189,7 @@ async function saveBook() {
   });
   const data = await readJson(response);
   if (!response.ok) {
-    showError(data.error);
+    formMessage.textContent = data.error || "Request failed";
     return;
   }
   dialog.close();
